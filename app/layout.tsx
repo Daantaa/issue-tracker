@@ -5,6 +5,7 @@ import NavBar from "./NavBar";
 import "@radix-ui/themes/styles.css";
 import { Container, Theme, ThemePanel } from "@radix-ui/themes";
 import "./theme-config.css";
+import AuthProvider from "./auth/Provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} antialiased`}
       >
+        <AuthProvider>
         <Theme appearance="light" accentColor="violet">
           <NavBar />
             <main className="p-5">
@@ -34,6 +36,7 @@ export default function RootLayout({
               </Container>
             </main>
         </Theme>
+        </AuthProvider>
       </body>
     </html>
   );
