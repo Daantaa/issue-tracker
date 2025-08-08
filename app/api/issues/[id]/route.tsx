@@ -1,16 +1,34 @@
-import { issueSchema } from "@/app/validationSchema";
+import { patchIssueSchema } from "@/app/validationSchema";
 import prisma from "@/prisma/client";
+import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import authOptions from "../../auth/authOptions";
+import { use } from "react";
 
 
 export async function PATCH(
+    
     request: NextRequest, 
     { params }: { params: {id: string }}) {
+
+    const session = await getServerSession(authOptions);
+    if(!session)
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     
     const body = await request.json();
-    const validation = issueSchema.safeParse(body);
+    const validation = patchIssueSchema.safeParse(body);
     if (!validation.success) {
         return NextResponse.json(validation.error, { status: 400 });
+    }
+
+    const {assignedToUserId, title, description, status} = body;
+    if(assignedToUserId) {
+        const user = await prisma.user.findUnique({
+         where: { id: assignedToUserId }
+        });
+
+        if(!user) 
+            return NextResponse.json({ error: 'Assigned user not found' }, { status: 400 });
     }
 
     const issue = await prisma.issue.findUnique({
@@ -24,9 +42,10 @@ export async function PATCH(
     const updatedIssue = await prisma.issue.update({
         where: { id: issue.id },
         data: {
-            title: body.title,
-            description: body.description,
-            status: body.status
+            title,
+            description,
+            status,
+            assignedToUserId
         }
     });
 
@@ -37,6 +56,10 @@ export async function PATCH(
 export async function DELETE(
     request: NextRequest, 
     { params }: { params: {id: string }}) {
+
+    const session = await getServerSession(authOptions);
+    if(!session)
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     
     const issue = await prisma.issue.findUnique({
         where: { id: parseInt(params.id) }
